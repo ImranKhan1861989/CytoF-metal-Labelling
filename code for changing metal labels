@@ -1,0 +1,89 @@
+import pandas as pd
+import os
+
+def load_cytof_file(file_path):
+    """
+    Load a CyTOF file into a pandas DataFrame.
+    Assumes the CyTOF file is in a CSV format.
+    """
+    return pd.read_csv(file_path)
+
+def normalize_labels(df, label_mapping):
+    """
+    Normalize the metal labels in the CyTOF DataFrame to a unified naming convention.
+    
+    Parameters:
+    - df: The DataFrame containing CyTOF data with metal labels as column names.
+    - label_mapping: A dictionary mapping old metal labels to unified metal labels, ignoring case differences.
+    
+    Returns:
+    - A DataFrame with normalized metal labels.
+    """
+    # Convert all column names to lowercase for comparison
+    normalized_columns = {col.lower(): col for col in df.columns}
+    
+    # Create a new mapping with unified labels
+    new_columns = {}
+    for old_label, unified_label in label_mapping.items():
+        # Find the column name in the dataframe, ignoring case
+        if old_label.lower() in normalized_columns:
+            new_columns[normalized_columns[old_label.lower()]] = unified_label
+    
+    # Rename the columns based on the new mapping
+    df = df.rename(columns=new_columns)
+    return df
+
+def save_cytof_file(df, output_path):
+    """
+    Save the modified CyTOF DataFrame to a CSV file.
+    """
+    df.to_csv(output_path, index=False)
+
+def unify_cytof_labels(file_paths, label_mapping, output_dir):
+    """
+    Unify the metal labels for multiple CyTOF files and save the updated files.
+    
+    Parameters:
+    - file_paths: List of file paths to the CyTOF CSV files.
+    - label_mapping: A dictionary mapping old metal labels to unified metal labels.
+    - output_dir: Directory to save the updated CyTOF files.
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for file_path in file_paths:
+        # Load the CyTOF file
+        df = load_cytof_file(file_path)
+        
+        # Normalize the labels
+        df = normalize_labels(df, label_mapping)
+        
+        # Create the output file path
+        output_path = os.path.join(output_dir, os.path.basename(file_path))
+        
+        # Save the updated file
+        save_cytof_file(df, output_path)
+        print(f"Processed and saved: {output_path}")
+
+# Example usage
+if __name__ == "__main__":
+    # Define the label mapping (replace with actual mappings)
+    label_mapping = {
+        'cd111': 'Cd111',
+        'pt195': 'Pt195',
+        'pd102': 'Pd102',
+        # Add more mappings as needed
+    }
+
+    # List of file paths to CyTOF files (replace with actual file paths)
+    file_paths = [
+        'experiment1.csv',
+        'experiment2.csv',
+        # Add more file paths as needed
+    ]
+    
+    # Output directory where updated files will be saved
+    output_dir = 'unified_cytof_files'
+
+    # Unify the metal labels across files
+    unify_cytof_labels(file_paths, label_mapping, output_dir)
